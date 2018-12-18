@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="generator" content=
+    "HTML Tidy for HTML5 for Windows version 5.6.0">
+    <meta charset="utf-8">
+    <title>
+      hyperbolic-euclidean test
+    </title>
+    <meta name="viewport" content=
+    "width=device-width,user-scalable=no,minimum-scale=1.0,maximum-scale=1.0">
+    <!-- <base href="/test/"> -->
+
+    <script src=
+    "../node_modules/systemjs/dist/system.src.js"></script>
+    <script src=
+    "./systemjs/systemjs-dynamic-ts.config.js"></script>
+    <script src="../node_modules/async/dist/async.js"></script>
+    <script src="../node_modules/three/build/three.js"></script>
+    <script src=
+    "../node_modules/three/examples/js/libs/stats.min.js"></script>
+  </head>
+  <body>
+    <script>
+    var _test = './test';
+
+
+    window.onload = System.import(_test)
+    .then((Test) => {
+      var test = Test.test;
+
+      console.log(`System.import ${_test}`);
+      console.log(`Test = ${Test}`);
+      for(let p in Test){
+        console.log(`Test module contains export ${p}`);
+      }
+      for(let p in test){
+        console.log(`Test.test contains method ${p}`);
+      }
+
+      // tests of app/services/hyperbolic.ts
+      console.log(`test of hyperbolic.innerproduct ${test['innerproduct']()}`);
+      console.log(`test of hyperbolic.midpoint ${test['midpoint']()}`);
+      console.log(`test of hyperbolic.reflection_across ${test['reflection_across']()}`);
+      console.log(`test of hyperbolic.translation_by_refl ${test['translation_by_refl']()}`);
+
+      // tests of Math.sinh, Math.cosh
+      test['cosh_exists']();
+      test['sinh_exists']();
+
+      // tests of translations along axes
+      // at present these tests are tautalogical - the expected result
+      // is taken by function output !
+      //console.log(`test of hyperbolic.translationX ${test['translationX']()}`);
+      //console.log(`test of hyperbolic.translationy ${test['translationY']()}`);
+      //console.log(`test of hyperbolic.translationZ ${test['translationZ']()}`);
+    })
+    .catch((e) => {
+      console.error(`test: import or test in test/test.ts module caused error: ${e}`);
+    });
+    </script>
+  </body>
+</html>

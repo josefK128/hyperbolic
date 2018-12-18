@@ -12,7 +12,7 @@
 #node_modules
 docs
 logs
-test
+#test
 NOTES
 @*
 
