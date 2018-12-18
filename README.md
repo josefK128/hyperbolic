@@ -9,10 +9,18 @@
   run 'npm run start' - starts small http server 'live-server'
 
 * [3] run URLs in browser
-  application: 'localhost:8080/src/' (or 'localhost:8080/src/index.html')
-  unit tests: 'localhost:8080/test/' (or 'localhost:8080/test/index.html')
+  [a]
+  unit tests: 'localhost:8080/test/'  (index.html)
   NOTE:if running tests best to run in Chrome and open devtools via the
   'three vertical dots' icon - select 'more tools - select 'developer tools'
-  and 'console' should come up (what we wnat), or alternatively select
-  'console' (which gives program output) such as test reults in the case
+  and 'console' should come up (what we want), or alternatively select
+  'console' (which gives program output) such as test results in the case
   of the unit tests.
+  [b]
+  application: 'localhost:8080/src/'  (index.html)
+  Follow the GUI - checkboxes remove one or both cubes
+  Sliders translate the cubes in x,y or z.
+  Reset returns both cubes to their intial positions 
+  Initial positions are stated in the GUI.
+
+
