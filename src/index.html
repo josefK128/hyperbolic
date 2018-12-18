@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="generator" content=
+    "HTML Tidy for HTML5 for Windows version 5.6.0">
+    <meta charset="utf-8">
+    <title>
+      hyperbolic-euclidean
+    </title>
+    <meta name="viewport" content=
+    "width=device-width,user-scalable=no,minimum-scale=1.0,maximum-scale=1.0">
+    <base href="/src/"><!-- styles -->
+    <link href="./styles/css/normalize.css" rel="stylesheet">
+    <link href="./styles/css/domeN.css" rel="stylesheet">
+    <!-- System, socket.io async, TweenMax, THREE -->
+
+    <script src=
+    "../node_modules/systemjs/dist/system.src.js"></script>
+    <script src=
+    "./systemjs/systemjs-dynamic-ts.config.js"></script>
+    <script src="../node_modules/async/dist/async.js"></script>
+    <!-- don't want CDN dependency -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script> -->
+
+    <script src="../node_modules/three/build/three.js"></script>
+    <script src=
+    "../node_modules/three/examples/js/vr/WebVR.js"></script>
+    <script src=
+    "../node_modules/three/examples/js/libs/stats.min.js"></script>
+    <script src=
+    "../node_modules/three/examples/js/libs/dat.gui.min.js"></script>
+  </head>
+  <body>
+    <canvas id='i3d' style='position:absolute; left:0px; top:0px;'>
+    </canvas>
+    <script>
+    // NOTE: globals: config, THREE, System, (_scene)
+    // NOTE: injection: state, stats, datgui, TweenMax (narrative)
+
+    // SCENE
+    var _scene = './app/scenes/test/scene',
+        config;
+
+
+    window.onload = System.import(_scene)
+    .then((Scene) => {
+      console.log(`System.import ${_scene}`);
+      config = Scene.config;     // export - made global
+      var state = Scene.state;   // export - injected where needed
+
+      // TEMP diagnostics !!!
+      console.log(`_webvr = ${config.webvr} !!!!!!!!!`);
+      console.log(`_vive = ${config.vive} !!!!!!!!!`);
+      //console.log(`TweenMax = ${TweenMax}`);  // uncomment only if use CDN 
+      console.log(`config = ${config}:`);
+      console.dir(config);
+      console.log(`state = ${state}:`);
+      console.dir(state);
+
+      // state components
+      async.parallel({
+        narrative: function(callback){
+          // import module whose property is the module export 'narrative'
+          System.import(config._narrative)
+            .then((Narrative) => {
+              var narrative = Narrative.narrative;  // export
+              callback(null, narrative);
+              //console.log(`System.import(_narrative) returns singleton instance narrative = ${narrative}`);
+          })
+          .catch((e) => {
+            console.error(`index: import of narrative module caused error: ${e}`);
+          });
+        },
+       
+        // not needed if using CDN 
+        // instead just set injection['Tweenmax'] = Tweenmax; // from CDN
+        TweenMax: function(callback){
+          // import module whose property is the module export 'narrative'
+          System.import(config._tweenmax)
+            .then((TweenMax) => {
+              console.log(`System.import(_tweenmax) returns singleton instance Tweenmax = ${TweenMax}`);
+
+              // diagnostic
+              //for(var p in TweenMax){
+              //  console.log(`TweenMax component ${p} = ${TweenMax[p]}`);
+              //}
+              //console.log(`System.import(_tweenmax) returns singleton instance Tweenmax = ${TweenMax.TweenMax}`);
+              callback(null, TweenMax.TweenMax);
+          })
+          .catch((e) => {
+            console.error(`index: import of TweenMax module caused error: ${e}`);
+          });
+        }
+
+      },
+      (err, injection) => {
+        if(err){
+          console.error("error: " + err);
+          return;
+        }
+        //injection['config'] = config; // global - not needed in injection
+        injection['state'] = state;
+        injection['datgui'] = new dat.GUI(); // dat.GUI global
+        injection['stats'] = new Stats(); // Stats global
+
+        // diagnostic
+        for(var p in injection){
+          console.log(`injection component ${p} = ${injection[p]}`);
+        }
+        // initialize narrative
+        injection.narrative.bootstrap(injection);
+      }
+    );
+    //async.parallel
+    })
+    .catch((e) => {
+      console.error(`index: import of config module caused error: ${e}`);
+    });
+    //import config
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+/* document */
+body {
+  left: 0vw;
+  top: 0vh;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  /* background-color: #ddddff; */
+  background-color: #000000;
+  margin: 0;
+  padding: 0; }
+
+/* text */
+@font-face {
+  font-family: "Neuropol";
+  src: url(../fonts/neuropol.ttf); }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Neuropol";
+  text-shadow: 0 -2px 3px #aaaaaa, 0 -4px 3px #666666; }
+
+/* links */
+a {
+  font-family: "Neuropol";
+  text-decoration: none;
+  color: #fff; }
+
+a:hover, a:active {
+  color: #9685BA; }
+
+/*# sourceMappingURL=domeN.css.map */
