@@ -34,10 +34,8 @@ export var h_vsh:string = `
     
     mat4 Tz = mat4(1,0,0,0, 0,1,0,0, 0,0,cosh(utz),sinh(utz), 0,0,sinh(utz),cosh(utz));
 
-
     mat4 Tr = Tz * Ty * Tx;
     mat4 T =  projectionMatrix * modelViewMatrix * Tr;
-    
     gl_Position = T * vec4(position.xyz, 1.0);
   }
   `;

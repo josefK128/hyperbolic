@@ -30,7 +30,7 @@ export var create = (options:Object={}) => {
      });
      cube_m.blendSrc = THREE.SrcAlphaFactor; // default
      cube_m.blendDst = THREE.OneMinusSrcAlphaFactor; //default
-     //cube_m.depthTest = false;
+     cube_m.depthTest = false;
      cube = new THREE.Mesh(cube_g, cube_m);
   
   
