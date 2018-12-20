@@ -5,11 +5,22 @@ import {mediator} from './services/mediator';
 import {transform3d} from './services/transform3d';
 import {hyperbolic} from './services/hyperbolic';
 
-// shaders
-import {vsh} from './models/space/quad_vsh/vsh_default.glsl';
-import {fsh} from './models/space/quad_fsh/fsh_default.glsl';
-import {uniforms} from './models/space/quad_fsh/fsh_default.glsl';
+// actors
+import {create as shadercube_create} from './models/stage/actors/shadercube';
 
+
+// shaders - simple default
+import {vsh_default} from './models/space/default/vsh_default.glsl';
+import {fsh_default} from './models/space/default/fsh_default.glsl';
+import {uniforms_default} from './models/space/default/vsh_default.glsl';
+
+// shaders - euclidean and hyperbolic translations on x,y,z axes
+import {e_vsh} from './models/space/euclidean/e_vsh_translation_axes.glsl';
+import {e_fsh} from './models/space/euclidean/e_fsh_red.glsl';
+import {e_uniforms} from './models/space/euclidean/e_vsh_translation_axes.glsl';
+import {h_vsh} from './models/space/hyperbolic/h_vsh_translation_axes.glsl';
+import {h_fsh} from './models/space/hyperbolic/h_fsh_green.glsl';
+import {h_uniforms} from './models/space/hyperbolic/h_vsh_translation_axes.glsl';
 
 
 // singleton closure-instance variables
@@ -62,11 +73,23 @@ var narrative:Narrative,
     ambient_light:THREE.AmbientLight,
     e_geometry:THREE.BoxGeometry,
     e_material:THREE.Material,
+    e_options:Object,
     e_cube:THREE.Mesh,
     h_geometry:THREE.BoxGeometry,
     h_material:THREE.Material,
     h_cube:THREE.Mesh,
+    h_options:Object,
     h_cube_orig:THREE.Mesh,
+
+    // translation.xyz via dat.gui
+    // euclidean
+    etx:number = 0.0,
+    ety:number = 0.0,
+    etz:number = 0.0,
+    // hyperbolic
+    htx:number = 0.0,
+    hty:number = 0.0,
+    htz:number = 0.0,
 
 
     onWindowResize:any = () => {
@@ -93,6 +116,27 @@ var narrative:Narrative,
     render = () => {
         // ellapsedTime in seconds - used in simulations
         et = clock.getElapsedTime();
+
+        // write e_cube shader uniforms utx, uty, utz, utime
+        e_cube.material.uniforms.utx.value = etx;
+        e_cube.material.uniforms.utx.needsUpdate = true;
+        e_cube.material.uniforms.uty.value = ety;
+        e_cube.material.uniforms.uty.needsUpdate = true;
+        e_cube.material.uniforms.utz.value = etz;
+        e_cube.material.uniforms.utz.needsUpdate = true;
+        e_cube.material.uniforms.utime.value = et;
+        e_cube.material.uniforms.utime.needsUpdate = true;
+
+        // write h_cube shader uniforms utx, uty, utz, utime
+        h_cube.material.uniforms.utx.value = htx;
+        h_cube.material.uniforms.utx.needsUpdate = true;
+        h_cube.material.uniforms.uty.value = hty;
+        h_cube.material.uniforms.uty.needsUpdate = true;
+        h_cube.material.uniforms.utz.value = htz;
+        h_cube.material.uniforms.utz.needsUpdate = true;
+        h_cube.material.uniforms.utime.value = et;
+        h_cube.material.uniforms.utime.needsUpdate = true;
+
 
         // actors
         for(let actor in narrative.actors){
@@ -129,8 +173,12 @@ var narrative:Narrative,
 
       if(_stats){
         stats.update();
-      }
-      render();
+        }
+
+        // delay render start to ensure e_cube and h_cube are created  
+      setTimeout(() => {
+        render();
+      },1000);
     };
 
 
@@ -144,7 +192,10 @@ class Narrative {
  
 
   create_gui(){
-  console.log(`narrative.create_gui()`);
+    console.log(`narrative.create_gui()`);
+
+    // do NOT propogate mouse events outside datgui
+    //datgui.domElement.parentNode.setAttribute('style', 'pointer-events:none'); 
     // set initial/reset values
     const PI:number = 3.141592654;
     var euclidean_c,
@@ -154,31 +205,33 @@ class Narrative {
         z_c,
         x:number = 0.0,
         y:number = 0.0,
-        z:number = -20.0,
+        z:number = 0.0,
+        sinh = hyperbolic.sinh,
+        cosh = hyperbolic.cosh,
         options = {
-          camera: 'fov=90 at (0, .01, 0)';
-          euclidean_cube: 'side=2 at (0, 1, -20) red';
-          hyperbolic_cube: 'side=2 at (0, -1, -20) green';
+          camera: 'fov=90 at (0, .01, 10)';
+          euclidean_cube: 'side=2 at (0, 1, 0) red';
+          hyperbolic_cube: 'side=2 at (0, -1, 0) green';
           euclidean: e_cube.visible;
           hyperbolic: h_cube.visible
-          positionX: x;
-          positionY: y;
-          positionZ: z;
+          positionX: 0.0;
+          positionY: 0.0;
+          positionZ: 0.0;
           reset_to_initial: function() {
             console.log(`reset`);
-            //h_cube = h_cube_orig.clone();
-            h_cube.copy(h_cube_orig);
+            etx = 0.0;
+            ety = 0.0;
+            etz = 0.0;
+            htx = 0.0;
+            hty = 0.0;
+            htz = 0.0;
             options['positionX'] = 0.0;
             options['positionY'] = 0.0;
-            options['positionZ'] = -20.0;
-            x = 0.0;
-            y = 0.0;
-            z = -20.0;
-            camera.lookAt(0,0,-20);  // initial location of cubes
-            e_cube.position.set(0, 1, -20);
+            options['positionZ'] = 0.0;
+            e_cube.position.set(0, 1, 0);
             e_cube.visible = true;
             options['euclidean'] = true;
-            h_cube.position.set(0, -1, -20);
+            h_cube.position.set(0, -1, 0);
             h_cube.visible = true;
             options['hyperbolic'] = true;
           }
@@ -191,7 +244,7 @@ class Narrative {
     hyperbolic_c = datgui.add(options, 'hyperbolic').listen();
     x_c = datgui.add(options, 'positionX', -20,20).listen();
     y_c = datgui.add(options, 'positionY', -20,20).listen();
-    z_c = datgui.add(options, 'positionZ', -100,-3).listen();
+    z_c = datgui.add(options, 'positionZ', -100,5).listen();
     datgui.add(options, 'reset_to_initial');
 
     // changes
@@ -205,80 +258,65 @@ class Narrative {
     });
     
     x_c.onChange((v) => {
-      var mt:THREE.Matrix4,
-          p:THREE.Vector4,
-          u:THREE.Vector4,
-          e:THREE.Vector3,
-          start:THREE.Vector3,
-          dest:THREE.Vector3,
-          dx:THREE.Vector3;
-
       x = v;
+      etx = v;
+      htx = v;
       
       // Euclidean matrix4
-      e_cube.position.set(v, y+1.0, z);
-//      h_cube.position.set(v, y-1.0, z);
-      mt = (new THREE.Matrix4()).makeTranslation(x,y,z);
-      p = new THREE.Vector4(0,0,0,1);
-      p.applyMatrix4(mt);
-      e_cube.position.set(p.x, p.y+1.0, p.z);
-//      h_cube.position.set(p.x, p.y-1.0, p.z); // euclidean translation
-
-      // hyperbolic.translation_by_refl Matrix4 FAILS!
-//      h_cube.position.set(0,-1.0,0);
-//      console.log(`before: h_cube.pos =  ${h_cube.position.toArray()}`);
-//      //start = new THREE.Vector4(e.x,e.y,e.z,1.0);   // start pos
-//      start = new THREE.Vector4(0,-1,0,1.0);   // start pos
-//      dest = new THREE.Vector4(x, y-1.0, z, 1.0);  // destination pos
-//      console.log(`before: dest =  ${dest.toArray()}`);
-//      mt = hyperbolic.translation_by_refl(start, dest);
-//      h_cube.applyMatrix(mt);   // Object3D.applyMatrix(mt)
-
-        // hyperbolic.translationX Matrix4 
-//        dx = v - h_cube.position.x;
-//        mt = hyperbolic.translationX(dx);
-//        h_cube.applyMatrix(mt);   // Object3D.applyMatrix(mt)
-//        console.log(`v = ${v} dx = ${dx} h_cube.pos.x = ${h_cube.position.x} h_cube.pos.z =  ${h_cube.position.z}`);
-
-        // hyperbolic distance f 
-        p = new THREE.Vector4(0,1.0,20,1);   //initial
-        u = new THREE.Vector4(v,1.0,20,1);  //translation - eulidean distance
-        dx = hyperbolic.distance(p,u);  //translation (hyperbolic.distance)
-        console.log(`hyp.dist dx = ${dx}`);
-        h_cube.position.x = dx;
+      //let mt = (new THREE.Matrix4()).makeTranslation(x,y,z);
+      //let mt = (new THREE.Matrix4()).makeTranslation(htx,hty,htz);
+      //let p = new THREE.Vector4(0,0,0,1);
+      //p.applyMatrix4(mt);
+      //e_cube.position.set(p.x, p.y+1.0, p.z);
+      //h_cube.position.set(p.x, p.y-1.0, p.z);
     });
     
     y_c.onChange((v) => {
       y = v;
-      //e_cube.position.set(x, v+1.0, z);
-      //h_cube.position.set(x, v-1.0, z);
+      ety = v;
+      hty = v;
 
       // Euclidean matrix4
-      let mt = (new THREE.Matrix4()).makeTranslation(x,y,z);
-      let p = new THREE.Vector4(0,0,0,1);
-      p.applyMatrix4(mt);
-      e_cube.position.set(p.x, p.y+1.0, p.z);
-      h_cube.position.set(p.x, p.y-1.0, p.z);
+//      let mt = (new THREE.Matrix4()).makeTranslation(x,y,z);
+//      let mt = (new THREE.Matrix4()).makeTranslation(htx,hty,htz);
+//      let p = new THREE.Vector4(0,0,0,1);
+//      p.applyMatrix4(mt);
+//      e_cube.position.set(p.x, p.y+1.0, p.z);
+//      h_cube.position.set(p.x, p.y-1.0, p.z);
     });
 
     z_c.onChange((v) => {
       z = v;
-      //e_cube.position.set(x, y+1.0, v);
-      //h_cube.position.set(x, y-1.0, v);
+      etz = v;
+      htz = v;
 
       // Euclidean matrix4
-      let mt = (new THREE.Matrix4()).makeTranslation(x,y,z);
-      let p = new THREE.Vector4(0,0,0,1);
-      p.applyMatrix4(mt);
-      e_cube.position.set(p.x, p.y+1.0, p.z);
-      h_cube.position.set(p.x, p.y-1.0, p.z);
+//      //let mt = (new THREE.Matrix4()).makeTranslation(x,y,z);
+//      let mt = (new THREE.Matrix4()).makeTranslation(htx,hty,htz);
+//      let p = new THREE.Vector4(0,0,0,1);
+//      p.applyMatrix4(mt);
+//      //e_cube.position.set(p.x, p.y+1.0, p.z);
+//      h_cube.position.set(p.x, p.y-1.0, p.z);
     });
 
-  }//create+gui
-    
+  }//create_gui
+   
     
   bootstrap(injection:Object){
     mediator.logc(`\n\n*** narrative bootstrap`);
+
+    // diagnostic
+//    console.log(`shadercube_create = ${shadercube_create}`);
+//    console.log(`vsh_default = ${vsh_default}`);
+//    console.log(`fsh_default = ${fsh_default}`);
+//    console.log(`uniforms_default = ${uniforms_default}`);
+//    console.log(`e_vsh = ${e_vsh}`);
+//    console.log(`e_fsh = ${e_fsh}`);
+//    console.log(`e_uniforms = ${e_uniforms}`);
+//    console.log(`h_vsh = ${h_vsh}`);
+//    console.log(`h_fsh = ${h_fsh}`);
+//    console.log(`h_uniforms = ${h_uniforms}`);
+
 
     _webvr = config.webvr;
     _vive = config.vive;
@@ -329,73 +367,68 @@ class Narrative {
     // disable vr for sgTarget and postTarget passes - set true in render
     renderer.vr.enabled = false; 
 
-    // initialize camera 
-    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.01, 1000 );
-    camera.position.x = 0.0;
-    camera.position.y = 0.01;
-    camera.position.z = 0.0;
-    camera.lookAt(0,0,-20);
-    //controls = new THREE.OrbitControls(camera);
-
     // initialize axes, ambient_light
     axes = new THREE.AxesHelper(5000);
-    axes.position.set(0,0,-20);
+    axes.position.set(0,0,0);
     scene.add(axes);
     ambient_light = new THREE.AmbientLight('#111111');
     ambient_light.position.y = 10.0;
     scene.add(ambient_light);
 
-    // initialize e-cube 
-    e_geometry = new THREE.BoxGeometry(2.0, 2.0, 2.0 );
-    e_material = new THREE.MeshBasicMaterial({
-           wireframe: false,
-           color: 'red',            
-           transparent: true,
-           opacity:0.6,
-           side:THREE.DoubleSide
-    });
-    e_cube = new THREE.Mesh( e_geometry, e_material );
-    e_cube.blendSrc = THREE.SrcAlphaFactor; // default
-    e_cube.blendDst = THREE.OneMinusSrcAlphaFactor; //default
-    if(_euclidean){
-      e_cube.visible = true;
-    }else{
-      e_cube.visible = false;
-    }
-    e_cube.position.y = 1.0;
-    e_cube.position.z = -20.0;
-    scene.add(e_cube );
+    // initialize camera 
+    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.01, 1000 );
+    camera.position.x = 0.0;
+    camera.position.y = 0.01;
+    camera.position.z = 10.0;
+    camera.lookAt(0,0,0);
+    //controls = new THREE.OrbitControls(camera);
+    //controls.target.set(htx, hty, htz);
 
 
-    // initialize h-cube 
-    h_geometry = new THREE.BoxGeometry(2.0, 2.0, 2.0 );
-    h_material = new THREE.MeshBasicMaterial({
-           wireframe: true,
-           color: 'green',            
-           transparent: true,
-           opacity:0.8,
-           side:THREE.DoubleSide
-    });
-    h_cube = new THREE.Mesh( h_geometry, h_material );
-    h_cube_orig = h_cube.clone();
-    h_cube.blendSrc = THREE.SrcAlphaFactor; // default
-    h_cube.blendDst = THREE.OneMinusSrcAlphaFactor; //default
-    h_cube = new THREE.Mesh( h_geometry, h_material );
-    if(_hyperbolic){
-      h_cube.visible = true;
-    }else{
-      h_cube.visible = false;
+    // initialize e-cube, h_cube, dat.gui 
+    // e_cube tmp uses default shaders
+    // h_cube tmp uses default shaders
+    e_options = {
+      fsh:e_fsh,
+      vsh:e_vsh,
+      uniforms:e_uniforms
     }
-    h_cube.position.y = -1.0;
-    h_cube.position.z = -20.0;
-    scene.add(h_cube );
+    shadercube_create(e_options).then((cube) => {
+      e_cube = cube;
+      e_cube.position.y = 1.0;
+      e_cube.position.z = 0.0;
+      scene.add(e_cube );
+      console.log(`e_cube = ${e_cube}`);
+      console.log(`e_cube.g.p.width = ${e_cube.geometry.parameters.width}`);
+      console.log(`e_cube.position = ${e_cube.position.toArray()}`);
+
+      // h_cube tmp uses default shaders
+      h_options = {
+      //fsh:fsh_default,
+      //vsh:vsh_default,
+      //uniforms:uniforms_default
+        fsh:h_fsh,
+        vsh:h_vsh,
+        uniforms:h_uniforms
+      }
+      shadercube_create(h_options).then((cube) => {
+        h_cube = cube;
+        h_cube.position.y = -1.0;
+        h_cube.position.z = 0.0;
+        scene.add(h_cube );
+        console.log(`h_cube = ${h_cube}`);
+        console.log(`h_cube.g.p.width = ${h_cube.geometry.parameters.width}`);
+        console.log(`h_cube.position = ${h_cube.position.toArray()}`);
+
+        // create gui
+        narrative.create_gui();
+      }
+    }
+
 
     // if not started, start clock and begin rendering cycle
     if(animating){return;}
     animating = true;
-
-    // create gui
-    narrative.create_gui();
 
     // gsap
     //TweenMax.ticker.addEventListener('tick', animate);

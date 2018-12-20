@@ -23,6 +23,8 @@
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script> -->
 
     <script src="../node_modules/three/build/three.js"></script>
+    <!-- <script src="../node_modules/three/examples/js/controls/OrbitControls.js"></script> -->
+
     <script src=
     "../node_modules/three/examples/js/vr/WebVR.js"></script>
     <script src=
@@ -104,9 +106,9 @@
         injection['stats'] = new Stats(); // Stats global
 
         // diagnostic
-        for(var p in injection){
-          console.log(`injection component ${p} = ${injection[p]}`);
-        }
+        //for(var p in injection){
+        //  console.log(`injection component ${p} = ${injection[p]}`);
+        //}
         // initialize narrative
         injection.narrative.bootstrap(injection);
       }
